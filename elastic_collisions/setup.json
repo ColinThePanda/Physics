@@ -1,0 +1,26 @@
+{
+	"Circles": [
+		{
+			"Acurate": "True",
+			"x": 0,
+			"y": -200,
+			"radius": 50,
+			"mass": "None",
+			"color": { "r": 0, "g": 0, "b": 255 },
+			"density": 1,
+			"yvel": 10,
+			"xvel": 0
+		},
+		{
+			"Acurate": "True",
+			"x": 200,
+			"y": 0,
+			"radius": 150,
+			"mass": "None",
+			"color": { "r": 255, "g": 0, "b": 0 },
+			"density": 1,
+			"yvel": 0,
+			"xvel": -40
+		}
+	]
+}
