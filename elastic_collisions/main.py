@@ -1,14 +1,14 @@
 import sys
 import os
 import json
+
 # make it be able to import linear algebra
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from linear_algebra.vector import vec2
+from panda_math.vector import vec2
 import pygame
 import math
 import numpy as np
 import time
-import matplotlib.pyplot as plt
 
 
 class Circle:
@@ -41,7 +41,7 @@ class Circle:
             )
 
     def __str__(self):
-        return f"Circle(mass={int(circle.mass)}, pos=({int(circle.pos.x)}, {int(circle.pos.y)}), vel=({int(circle.velocity.x)}, {int(circle.velocity.y)})"
+        return f"Circle(mass={int(self.mass)}, pos=({int(self.pos.x)}, {int(self.pos.y)}), vel=({int(self.velocity.x)}, {int(self.velocity.y)})"
 
     def __repr__(self):
         return str(self)
@@ -198,7 +198,7 @@ def elastic_collide(obj1: Circle, obj2: Circle):
         obj2.pos += correction_dir * (penetration_depth * (obj1.mass / total_mass))
 
 
-def load_circles_from_json(filename) -> list[Circle] | list:
+def load_setup(filename: str) -> tuple[list[Circle] | list, bool]:
     """Load circle configurations from a JSON file."""
     filename = os.path.join(os.path.abspath(os.path.dirname(__file__)), filename)
     print(filename)
@@ -208,17 +208,21 @@ def load_circles_from_json(filename) -> list[Circle] | list:
     except FileNotFoundError:
         print(os.path.exists(filename))
         print(f"Error: Could not find file {filename}")
-        return []
+        return [], False
     except json.JSONDecodeError:
         print(f"Error: Invalid JSON format in {filename}")
-        return []
+        return [], False
 
     circles = []
+    graph = False
+
+    if "Graph" in data:
+        graph = data.get("Graph", "False").lower() == "true"
 
     # Check if the "Circles" key exists in the JSON
     if "Circles" not in data:
         print("Error: JSON file does not contain a 'Circles' key")
-        return []
+        return [], graph
 
     for circle_data in data["Circles"]:
         try:
@@ -285,8 +289,7 @@ def load_circles_from_json(filename) -> list[Circle] | list:
             print(f"Problematic circle data: {circle_data}")
             continue
 
-    return circles
-
+    return circles, graph
 
 pygame.init()
 screen_size = (800, 600)
@@ -302,40 +305,46 @@ pygame.display.set_caption("Circle Physics Simulation")
 clock = pygame.time.Clock()
 
 # Load circles from JSON file
-circles = load_circles_from_json("setup.json")
+circles, graph = load_setup("setup.json")
 
-for circle in circles:
-    circle.draw(screen)
-    pygame.display.flip()
+print(circles, graph)
+print(type(circles), type(graph))
 
-plt.ion()
-fig, ax = plt.subplots()
-plt.ylabel("Velocity")
-plt.xlabel("Time")
-plt.title("Velocity over Time")
+if graph:
+    import matplotlib.pyplot as plt
 
-velocity_data = [[] for _ in circles]  # One list per circle
-total_velocity_data = []  # List to track the sum of all circle velocities
-time_data = []
+    for circle in circles:
+        circle.draw(screen)
+        pygame.display.flip()
+    
+    plt.ion()
+    fig, ax = plt.subplots()
+    plt.ylabel("Velocity")
+    plt.xlabel("Time")
+    plt.title("Velocity over Time")
 
-# Create a line for each circle with a unique label and color
-lines = []
-for i, circle in enumerate(circles):
-    (line,) = ax.plot([], [], label=f"Circle {i}")
-    lines.append(line)
+    velocity_data = [[] for _ in circles]  # One list per circle
+    total_velocity_data = []  # List to track the sum of all circle velocities
+    time_data = []
 
-# Create a line for the total velocity sum
-(total_velocity_line,) = ax.plot(
-    [], [], label="Total Velocity", color="black", linestyle="--"
-)
+    # Create a line for each circle with a unique label and color
+    lines = []
+    for i, circle in enumerate(circles):
+        (line,) = ax.plot([], [], label=f"Circle {i}")
+        lines.append(line)
 
-plt.legend()
-plt.draw()
-plt.pause(0.001)
+    # Create a line for the total velocity sum
+    (total_velocity_line,) = ax.plot(
+        [], [], label="Total Velocity", color="black", linestyle="--"
+    )
+
+    plt.legend()
+    plt.draw()
+    plt.pause(0.001)
+
+    start_time = time.time()
 
 time.sleep(1)
-
-start_time = time.time()
 
 printing = True
 running = True
@@ -357,28 +366,29 @@ while running:
         circle_screen_collide(circle, *screen.get_size())
         circle.update(screen)
 
-    elapsed_time = time.time() - start_time
-    time_data.append(elapsed_time)
+    if graph:
+        elapsed_time = time.time() - start_time
+        time_data.append(elapsed_time)
 
-    # Calculate the sum of magnitudes of velocities for all circles
-    total_velocity = sum(circle.velocity.magnitude for circle in circles)
-    total_velocity_data.append(total_velocity)
+        # Calculate the sum of magnitudes of velocities for all circles
+        total_velocity = sum(circle.velocity.magnitude for circle in circles)
+        total_velocity_data.append(total_velocity)
 
-    # Update each circle's velocity data
-    for i, circle in enumerate(circles):
-        velocity_data[i].append(circle.velocity.magnitude)
-        lines[i].set_xdata(time_data)
-        lines[i].set_ydata(velocity_data[i])
+        # Update each circle's velocity data
+        for i, circle in enumerate(circles):
+            velocity_data[i].append(circle.velocity.magnitude)
+            lines[i].set_xdata(time_data)
+            lines[i].set_ydata(velocity_data[i])
 
-    # Update the total velocity sum line
-    total_velocity_line.set_xdata(time_data)
-    total_velocity_line.set_ydata(total_velocity_data)
+        # Update the total velocity sum line
+        total_velocity_line.set_xdata(time_data)
+        total_velocity_line.set_ydata(total_velocity_data)
 
-    # Rescale and redraw
-    ax.relim()
-    ax.autoscale_view()
-    plt.draw()
-    plt.pause(0.001)
+        # Rescale and redraw
+        ax.relim()
+        ax.autoscale_view()
+        plt.draw()
+        plt.pause(0.001)
 
     if printing:
         os.system("cls" if sys.platform == "win32" else "clear")

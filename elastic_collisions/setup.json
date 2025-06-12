@@ -1,4 +1,5 @@
 {
+	"Graph" : "False",
 	"Circles": [
 		{
 			"Acurate": "True",
@@ -15,12 +16,12 @@
 			"Acurate": "True",
 			"x": 200,
 			"y": 0,
-			"radius": 150,
+			"radius": 100,
 			"mass": "None",
 			"color": { "r": 255, "g": 0, "b": 0 },
-			"density": 1,
+			"density": 8,
 			"yvel": 0,
-			"xvel": -40
+			"xvel": -20
 		}
 	]
 }

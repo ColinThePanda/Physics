@@ -1,5 +1,5 @@
-from linear_algebra.vector import vec2
-from linear_algebra.matrix import rotation_matrix_2d, Matrix, shear_matrix_2d
+from panda_math.vector import vec2
+from panda_math.matrix import rotation_matrix_2d, Matrix, shear_matrix_2d
 import pygame
 import math
 import numpy as np
